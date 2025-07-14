@@ -20,7 +20,7 @@ class Command(BaseCommand):
         try:
             df = fetch_google_sheet(self.sheet_id, self.sheet_name)
         except ValueError as e:
-            self.stdout.write(str(e))
+            print(e)
             return
 
         Transaction.objects.all().delete()
