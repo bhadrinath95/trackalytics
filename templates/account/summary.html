@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock script %}
+
+
+{% block content %}
+
+    <h2>Transaction Summary by Category</h2>
+    <form method="get">
+        {{ form.as_p }}
+        <button type="submit">Filter</button>
+    </form>
+
+    <div>
+        {% for account, data in chart_data.items %}
+            <h3>{{ account }}</h3>
+            <canvas id="chart-{{ forloop.counter0 }}" width="400" height="400"></canvas>
+            <script>
+                const ctx{{ forloop.counter0 }} = document.getElementById('chart-{{ forloop.counter0 }}').getContext('2d');
+                new Chart(ctx{{ forloop.counter0 }}, {
+                    type: 'pie',
+                    data: {
+                        labels: {{ data.labels|safe }},
+                        datasets: [{
+                            label: 'Spending by Category',
+                            data: {{ data.data|safe }},
+                            backgroundColor: {{ data.colors|safe }}
+                        }]
+                    }
+                });
+            </script>
+        {% endfor %}
+    </div>
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table border="1">
+    <thead>
+        <tr>
+            <th>Account</th>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Money IN</th>
+            <th>Money OUT</th>
+            <th>Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for obj in object_list %}
+            <tr>
+                <td>{{ obj.account }}</td>
+                <td>{{ obj.date }}</td>
+                <td>{{ obj.description }}</td>
+                <td>{{ obj.category }}</td>
+                <td>{{ obj.money_in }}</td>
+                <td>{{ obj.money_out }}</td>
+                <td>{{ obj.account_balance }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
