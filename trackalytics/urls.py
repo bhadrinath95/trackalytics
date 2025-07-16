@@ -20,9 +20,17 @@ from account.views import (
     transaction_view,
     transaction_summary
 )
+from user.views import (
+    login_view,
+    logout_view,
+    register_view
+)
 
 urlpatterns = [
     path("", transaction_view, name='transaction_view'),
     path('summary/', transaction_summary, name='transaction_summary'),
     path('admin/', admin.site.urls),
+    path("login/", login_view),
+    path("logout/", logout_view),
+    path("register/", register_view),
 ]
