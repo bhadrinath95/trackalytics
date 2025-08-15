@@ -17,8 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from account.views import (
-    transaction_view,
-    transaction_summary
+    home_view,
+    category_summary,
+    transaction_summary,
+    category_spending_trend,
+    saving_view
 )
 from user.views import (
     login_view,
@@ -27,10 +30,13 @@ from user.views import (
 )
 
 urlpatterns = [
-    path("", transaction_view, name='transaction_view'),
-    path('summary/', transaction_summary, name='transaction_summary'),
+    path("", home_view, name='home_view'),
+    path('summary/', category_summary, name='category_summary'),
+    path('transaction/', transaction_summary, name='transaction'),
+    path('trend/', category_spending_trend, name='trend'),
+    path('saving/', saving_view, name='saving'),
     path('admin/', admin.site.urls),
-    path("login/", login_view),
-    path("logout/", logout_view),
-    path("register/", register_view),
+    path("login/", login_view, name='login'),
+    path("logout/", logout_view, name='logout'),
+    path("register/", register_view, name='register'),
 ]

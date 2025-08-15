@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+    {% if request.user.is_authenticated %}
+        <div class="row">
+            <div class="col-12">
+                <h2>Top 10 Category Spending Trends</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <form method="GET">
+                    {{ form.as_p }}
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+        </div>   
+
+        <div class="row">
+            <div class="col-12">
+                {% if periods and datasets %}
+                    <!-- Pass data via data attributes -->
+                    <canvas id="spendingChart"
+                            data-periods='{{ periods|safe }}'
+                            data-datasets='{{ datasets|safe }}'></canvas>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block script %}
+<script src="{% static 'js/line_chart.js' %}"></script>
+{% endblock %}

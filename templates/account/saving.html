@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+    {% if message %}
+        <div class="row">
+            <div class="col-12">
+                <p>Please check if the google sheet has required view access</p>
+                <p>{{ message }}</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <table class="table">
+                    <tr>
+                        <th>Minimum Savings</th>
+                        <th>Maximum Savings</th>
+                    </tr>
+                    <tr>
+                        <td>{{ minimum_total }}</td>
+                        <td>{{ maximum_total }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </table>
+        {% for obj in object_list %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <strong>{{ obj.saving_type }}</strong>
+                        </div>
+                        <div class="card-body p-0">
+                            {{ obj.html_view|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

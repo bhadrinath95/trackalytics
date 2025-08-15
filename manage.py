@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
-import os
 import sys
-
+from dotenv import load_dotenv 
+from pathlib import Path
+import os
 
 def main():
     """Run administrative tasks."""
+    DOT_ENV_PATH = Path(__file__).resolve().parent / '.env'
+    if DOT_ENV_PATH.exists():
+        load_dotenv(dotenv_path=DOT_ENV_PATH)
+
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'trackalytics.settings')
     try:
         from django.core.management import execute_from_command_line

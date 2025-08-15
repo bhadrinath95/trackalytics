@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block script %}
+    <script>
+        window.chartData = {{ chart_data_json|safe }};
+    </script>
+    <script src="{% static 'js/charts.js' %}"></script>
+{% endblock script %}
+
+{% block content %}
+    {% if request.user.is_authenticated %}
+        <div class="row">
+            <div class="col-12">
+                <h2>Transaction Summary By Category</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <form method="GET">
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+
+        {% if view_type == "chart" %}
+            <div class="row">
+                {% for account, data in chart_data.items %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <strong>{{ account }}</strong>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="chart-{{ data.i }}" width="400" height="400"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="row">
+                {% for account, rows in table_data.items %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <strong>{{ account }}</strong>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-striped table-bordered table-sm mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for category, amount in rows %}
+                                            <tr>
+                                                <td>{{ category }}</td>
+                                                <td style="text-align:right;">{{ amount }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}

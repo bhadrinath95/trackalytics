@@ -1,30 +1,56 @@
 {% extends "base.html" %}
 
+{% block script %}
+    <style>
+        /* Hide spinner normally */
+        #loading-spinner {
+            display: none;
+        }
+        /* Show when the form is making an HTMX request */
+        form.htmx-request #loading-spinner {
+            display: inline-block;
+        }
+    </style>
+{% endblock script %}
+
 {% block content %}
-<table border="1">
-    <thead>
-        <tr>
-            <th>Account</th>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Category</th>
-            <th>Money IN</th>
-            <th>Money OUT</th>
-            <th>Balance</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for obj in object_list %}
-            <tr>
-                <td>{{ obj.account }}</td>
-                <td>{{ obj.date }}</td>
-                <td>{{ obj.description }}</td>
-                <td>{{ obj.category }}</td>
-                <td>{{ obj.money_in }}</td>
-                <td>{{ obj.money_out }}</td>
-                <td>{{ obj.account_balance }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    {% if request.user.is_authenticated %}
+        <div class="row">
+            <div class="col-12">
+                <h2>Load Transaction</h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div id="transaction-status">
+                    {% include "account/partials/transaction_status.html" %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <form id="transaction-update-form" 
+                    hx-post="{% url 'home_view' %}" 
+                    hx-target="#transaction-status"
+                    hx-swap="innerHTML">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Load</button>
+
+                    <div id="loading-spinner" class="ms-2">
+                        <div class="spinner-grow text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <p>Please <a href='{% url "login" %}'>Login</a> to access Trackalytics</p>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}

@@ -1,0 +1,10 @@
+{% if message %}
+    {% if success %}
+        <h4>Transactions are updated!</h4>
+        <p>{{ message }}</p>
+    {% else %}
+        <h4>Unable to update Transactions!</h4>
+        <p>Please check if the google sheet has required view access</p>
+        <p>{{ message }}</p>
+    {% endif %}
+{% endif %}

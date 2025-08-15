@@ -18,7 +18,7 @@ def fetch_google_sheet(sheet_id, sheet_name):
 
 def preprocess_transaction_data(df):
     df = df[df['Income and Expense Account'].notna() & (df['Income and Expense Account'] != 'Total')]
-
+    
     df['Income Money IN'] = df['Income Money IN'].fillna("0").apply(clean_money)
     df['Expense Money OUT'] = df['Expense Money OUT'].fillna("0").apply(clean_money)
     df['Account Balance'] = df['Account Balance'].fillna("0").apply(clean_money)

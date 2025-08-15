@@ -5,14 +5,11 @@ from account.models import Transaction, Bank
 from account.utils import fetch_google_sheet, preprocess_transaction_data
 from datetime import datetime
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Command(BaseCommand):
 
     def __init__(self):
-        self.sheet_id = os.environ.get("TRANSACTION_SHEET_ID")
+        self.sheet_id = os.environ.get("SHEET_ID")
         self.sheet_name = os.environ.get("TRANSACTION_SHEET_NAME")
 
     def handle(self, *args, **kwargs):
