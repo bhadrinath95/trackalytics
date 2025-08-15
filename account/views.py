@@ -146,6 +146,39 @@ def transaction_summary(request):
         "transactions_by_account": transactions_by_account
     })
 
+def income_summary(request):
+    form = CategoryTrendForm(request.GET or None)
+    chart_data = dict()
+
+    if form.is_valid():
+        start_date = form.cleaned_data['start_date']
+        end_date = form.cleaned_data['end_date']
+        group_by = form.cleaned_data["group_by"]
+
+        transactions = Transaction.objects.filter(
+            date__range=[start_date, end_date],
+            category="[Salary]"
+            )
+        
+        if group_by == "month":
+            transactions = transactions.annotate(period=TruncMonth('date'))
+            period_format = "%b %Y"  # e.g., "Aug 2025"
+        else:
+            transactions = transactions.annotate(period=TruncYear('date'))
+            period_format = "%Y"  # e.g., "2025"
+
+        summary = transactions.values('period').annotate(total_money_in=Sum('money_in')).order_by('period')
+
+        chart_data = {
+            'labels': [entry['period'].strftime(period_format) for entry in summary],
+            'data': [entry['total_money_in'] for entry in summary]
+        }
+
+    return render(request, 'account/income_summary.html', {
+        "form": form,
+        "chart_data": chart_data
+    })
+
 def category_spending_trend(request):
     form = CategoryTrendForm(request.GET or None)
     periods, datasets = [], []
@@ -206,8 +239,8 @@ def category_spending_trend(request):
 
     context = {
         "form": form,
-        "periods": json.dumps(periods),   # <-- serialize to JSON
-        "datasets": json.dumps(datasets)  # <-- serialize to JSON
+        "periods": json.dumps(periods),
+        "datasets": json.dumps(datasets)
     }
     return render(request, "account/category_spending_trend.html", context)
 

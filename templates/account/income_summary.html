@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Salary Income Summary</h2>
+<form method="get">
+    {{ form.as_p }}
+    <button type="submit">Filter</button>
+</form>
+
+<canvas id="incomeChart" width="400" height="200"></canvas>
+
+{{ chart_data|json_script:"income-chart-data" }}
+{% endblock %}
+
+{% block script %}
+<script src="{% static 'js/income_chart.js' %}"></script>
+{% endblock %}
