@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from .models import Transaction, Bank
-from .forms import DateRangeForm, CategoryForm, CategoryTrendForm
+from .forms import DateRangeForm, CategoryForm, CategoryTrendForm, SpecificCategoryForm
 from collections import defaultdict, OrderedDict
 import random
 import json
@@ -11,6 +11,8 @@ import os
 from django.db.models import Sum
 import pandas as pd
 from django.db.models.functions import TruncMonth, TruncYear
+from django.utils.timezone import now
+from dateutil.relativedelta import relativedelta
 
 # Set Indian currency formatting
 locale.setlocale(locale.LC_ALL, 'en_IN.UTF-8')
@@ -141,10 +143,66 @@ def transaction_summary(request):
             transactions_by_account[account] = txns_formatted
 
     return render(request, 'account/transactions.html', {
+        "title": "Top 10 Transactions",
         "form": form,
         "account_names": account_names,
         "transactions_by_account": transactions_by_account
     })
+
+# Transaction view
+def transaction_summary_by_category(request):
+    sheet_id = os.environ.get("SHEET_ID")
+    sheet_name = os.environ.get("DROP_DOWN")
+    df = fetch_google_sheet(sheet_id, sheet_name, None)
+    first_col = df.iloc[:, 0]
+    categories = first_col.dropna()
+    categories = categories[categories.astype(str).str.strip()  != ""].tolist()
+    
+    form = SpecificCategoryForm(request.GET or None, categories=categories)
+    account_names = None
+    transactions_by_account = None
+
+    if form.is_valid():
+        start_date = form.cleaned_data['start_date']
+        end_date = form.cleaned_data['end_date']
+        category = form.cleaned_data.get('category')
+        transactions_by_account = dict()
+        
+        transactions = Transaction.objects.filter(date__range=[start_date, end_date]).exclude(money_out=0)
+
+        if category:
+            transactions = transactions.filter(category=category)
+
+        account_names = transactions.values_list("account__name", flat=True).distinct()
+
+        for account in account_names:
+            if category:  
+                object_list = Transaction.objects.filter(
+                    account__name=account,
+                    date__range=[start_date, end_date],
+                    category=category
+                ).exclude(money_out=0).order_by('-money_out')
+            else:
+                object_list = Transaction.objects.filter(
+                    account__name=account,
+                    date__range=[start_date, end_date]
+                ).exclude(money_out=0).order_by('-money_out')
+            
+
+            txns_formatted = []
+            for txn in object_list:
+                txn.money_out = format_inr(txn.money_out)
+                txns_formatted.append(txn)
+
+            transactions_by_account[account] = txns_formatted
+
+    return render(request, 'account/transactions.html', {
+        "title": "Transactions By Category",
+        "form": form,
+        "account_names": account_names,
+        "transactions_by_account": transactions_by_account
+    })
+
 
 def income_summary(request):
     form = CategoryTrendForm(request.GET or None)
@@ -355,7 +413,6 @@ def saving_view(request):
     # Savings in Mutual Funds
     df = fetch_mutual_funds(sheet_id)
     df_selected = df.iloc[0:8, 8:16] 
-    columns_to_keep = ['Fund Name', 'Deposited Amount', 'Purchased Units', 'Current Value', 'Profit / Loss', 'Percentage Change']
     mf_purchased_value = df.iloc[1, 21]
     mf_current_value = df.iloc[1, 22]
     mf_current_value = float(mf_current_value.replace(',', ''))
@@ -384,4 +441,105 @@ def saving_view(request):
 
     return render(request, 'account/saving.html', context)
 
-									
+def account_category_analysis(request):
+    total_average = 0
+    current_month_average = 0
+    total_average_without_saving = 0
+    current_month_average_without_saving = 0
+    one_year_ago = now().date() - relativedelta(years=1)
+
+    # Fetch transactions
+    transactions = Transaction.objects.filter(
+        money_out__gt=0, date__gte=one_year_ago
+    ).values(
+        'account__name', 'account__is_active', 'date', 'category', 'money_out'
+    )
+
+    last_salary = (
+        Transaction.objects
+        .filter(account__name="HDFC Savings", category="[Salary]")
+        .order_by('-date')
+        .first()
+    )
+
+    df = pd.DataFrame(transactions)
+
+    if df.empty:
+        return render(request, "analysis.html", {"analysis": {}})
+
+    # Clean data
+    df = df[df['account__is_active'] == True]
+    df = df[~df['category'].isin(['[Transfer]'])]
+    df['date'] = pd.to_datetime(df['date'])
+    df['year_month'] = df['date'].dt.to_period('M')
+
+    current_month = now().strftime('%Y-%m')
+    analysis = {}
+    df_filtered_global = pd.DataFrame(columns=['Category', 'Average'])
+
+    # Define 12-month range
+    all_months = pd.period_range(start=one_year_ago, end=now().date(), freq='M')
+
+    for account, acc_df in df.groupby('account__name'):
+        # Sum by category & month
+        monthly = acc_df.groupby(['category', 'year_month'])['money_out'].sum().reset_index()
+
+        # Expand with missing months = 0
+        categories = monthly['category'].unique()
+        full_index = pd.MultiIndex.from_product([categories, all_months], names=['category', 'year_month'])
+        monthly_full = monthly.set_index(['category', 'year_month']).reindex(full_index, fill_value=0).reset_index()
+
+        # Current month spending
+        current = monthly_full[monthly_full['year_month'].astype(str) == current_month]
+        current_dict = dict(zip(current['category'], current['money_out']))
+
+        # Average across ALL 12 months
+        avg_dict = (monthly_full.groupby('category')['money_out'].sum() / len(all_months)).to_dict()
+
+        # Merge into DataFrame
+        merged_df = pd.DataFrame({
+            'Category': list(avg_dict.keys()),
+            'Current_Month': [current_dict.get(cat, 0) for cat in avg_dict.keys()],
+            'Average': list(avg_dict.values())
+        }).round(2)
+
+        tbl_merged_df = merged_df[merged_df['Current_Month'] > 0]
+
+        if len(tbl_merged_df) > 0:
+            analysis[account] = tbl_merged_df
+
+        # Exclude savings
+        merged_df_without_saving = merged_df[~merged_df['Category'].isin(["[Saving]"])]
+
+        # Collect global averages (numeric values only)
+        df_filtered = merged_df[['Category', 'Average']]
+        df_filtered_global = pd.concat([df_filtered_global, df_filtered], ignore_index=True)
+
+        # Totals
+        total_average += merged_df['Average'].sum()
+        current_month_average += merged_df['Current_Month'].sum()
+
+        total_average_without_saving += merged_df_without_saving['Average'].sum()
+        current_month_average_without_saving += merged_df_without_saving['Current_Month'].sum()
+
+    # Global sum by category (keep numeric until final step)
+    df_filtered_global = df_filtered_global.groupby("Category", as_index=False)["Average"].sum()
+
+    # Sort by numeric values
+    df_filtered_global = df_filtered_global.sort_values(by="Average", ascending=False)
+
+    # Format INR for display
+    df_filtered_global["Average"] = df_filtered_global["Average"].apply(format_inr)
+
+    df_filtered_global_html_view = df_filtered_global.to_html(classes="table table-striped", index=False)
+    
+    context = {
+        "analysis": analysis,
+        "last_salary": last_salary.money_in if last_salary else 0,
+        "total_average": round(total_average, 2),
+        "current_month_average": round(current_month_average, 2),
+        "total_average_without_saving": round(total_average_without_saving, 2),
+        "current_month_average_without_saving": round(current_month_average_without_saving, 2),
+        "df_filtered_global_html_view": df_filtered_global_html_view
+    }
+    return render(request, "account/analysis.html", context)

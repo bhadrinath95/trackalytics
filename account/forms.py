@@ -1,4 +1,5 @@
 from django import forms
+import os
 
 class CategoryForm(forms.Form):
     start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
@@ -9,6 +10,16 @@ class CategoryForm(forms.Form):
         ('table', 'Tabular View')
     ]
     view_type = forms.ChoiceField(choices=VIEW_CHOICES, required=False, initial='chart')
+
+class SpecificCategoryForm(forms.Form):
+    start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    end_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
+    category = forms.ChoiceField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        categories = kwargs.pop("categories", [])
+        super().__init__(*args, **kwargs)
+        self.fields["category"].choices = [("", "All Categories")] + [(c, c) for c in categories]
 
 class DateRangeForm(forms.Form):
     start_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))

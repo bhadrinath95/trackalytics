@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block content %}
+    {% if request.user.is_authenticated %}
+        <div class="row">
+            <div class="col-12">
+                <h2>Current Month Analysis</h2>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <table class="table">
+                    <tr>
+                        <th>Last Salary</th>
+                        <td>₹ {{ last_salary|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr><th colspan="2">With Savings</th></tr>
+                    <tr>
+                        <th>Total Average</th>
+                        <td>₹ {{ total_average|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <th>Current Month Expense</th>
+                        <td>₹ {{ current_month_average|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr><th colspan="2">Without Savings</th></tr>
+                    <tr>
+                        <th>Total Average</th>
+                        <td>₹ {{ total_average_without_saving|floatformat:2|intcomma }}</td>
+                    </tr>
+                    <tr>
+                        <th>Current Month Expense</th>
+                        <td>₹ {{ current_month_average_without_saving|floatformat:2|intcomma }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <button 
+                    class="btn btn-primary" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#globalTableCollapse" 
+                    aria-expanded="false" 
+                    aria-controls="globalTableCollapse"
+                >
+                    Average Spending per Category (Last 1 Year)
+                </button>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <div class="collapse" id="globalTableCollapse">
+                    <div class="card card-body">
+                        {{ df_filtered_global_html_view|safe }}
+                    </div>
+                </div>
+            </div>  
+        </div>
+        <br />
+        <div class="row">
+            {% for account, df in analysis.items %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <strong>{{ account }}</strong>
+                        </div>
+                        <div class="card-body">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Current Month</th>
+                                        <th>Average</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in df.itertuples %}
+                                        {% if row.Current_Month < row.Average %}
+                                            <tr class="table-success">
+                                        {% else %}
+                                            <tr class="table-danger">
+                                        {% endif %}
+                                            <td>{{ row.Category }}</td>
+                                            <td>₹ {{ row.Current_Month|floatformat:2|intcomma }}</td>
+                                            <td>₹ {{ row.Average|floatformat:2|intcomma }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}
+
+

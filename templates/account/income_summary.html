@@ -2,15 +2,29 @@
 {% load static %}
 
 {% block content %}
-<h2>Salary Income Summary</h2>
-<form method="get">
-    {{ form.as_p }}
-    <button type="submit">Filter</button>
-</form>
+{% if request.user.is_authenticated %}
+    <div class="row">
+        <div class="col-12">
+            <h2>Salary Income Summary</h2>
+        </div>
+    </div>
 
-<canvas id="incomeChart" width="400" height="200"></canvas>
+    <div class="row">
+        <div class="col-12">
+            <form method="get">
+                {{ form.as_p }}
+                <button type="submit">Filter</button>
+            </form>
+        </div>
+    </div>
 
-{{ chart_data|json_script:"income-chart-data" }}
+    <div class="row">
+        <div class="col-12">
+            <canvas id="incomeChart" width="400" height="200"></canvas>
+            {{ chart_data|json_script:"income-chart-data" }}
+        </div>
+    </div>  
+{% endif %}
 {% endblock %}
 
 {% block script %}

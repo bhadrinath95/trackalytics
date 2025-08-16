@@ -22,7 +22,9 @@ from account.views import (
     transaction_summary,
     category_spending_trend,
     saving_view,
-    income_summary
+    income_summary,
+    account_category_analysis,
+    transaction_summary_by_category
 )
 from user.views import (
     login_view,
@@ -34,9 +36,11 @@ urlpatterns = [
     path("", home_view, name='home_view'),
     path('summary/', category_summary, name='category_summary'),
     path('transaction/', transaction_summary, name='transaction'),
+    path('category_transaction/', transaction_summary_by_category, name='category_transaction'),
     path('trend/', category_spending_trend, name='trend'),
     path('saving/', saving_view, name='saving'),
     path('income/', income_summary, name='income'),
+    path('analysis/', account_category_analysis, name='analysis'),
     path('admin/', admin.site.urls),
     path("login/", login_view, name='login'),
     path("logout/", logout_view, name='logout'),
